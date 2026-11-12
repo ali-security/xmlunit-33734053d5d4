@@ -148,6 +148,33 @@ public class InputTest {
         allIsWellFor(s, "furry");
     }
 
+    @Test public void shouldNotExecuteExtensionFunctionsWhenTransforming() throws Exception {
+        String marker = "org.xmlunit.builder.InputTest.extensionFunctionCalled";
+        // setProperty returns the old value, make sure it is not null
+        System.setProperty(marker, "untouched");
+        try {
+            try {
+                Input.byTransforming(Input.fromString("<foo/>"))
+                    .withStylesheet(Input.fromString(
+                        "<xsl:stylesheet version=\"1.0\""
+                        + " xmlns:xsl=\"http://www.w3.org/1999/XSL/Transform\""
+                        + " xmlns:java=\"http://xml.apache.org/xalan/java\">"
+                        + "<xsl:template match=\"/\">"
+                        + "<result><xsl:value-of select=\"java:java.lang.System.setProperty('"
+                        + marker + "', 'pwned')\"/></result>"
+                        + "</xsl:template>"
+                        + "</xsl:stylesheet>"))
+                    .build();
+            } catch (XMLUnitException ex) {
+                // the processor refused to execute the extension function
+            }
+            assertEquals("extension function must not have been executed",
+                         "untouched", System.getProperty(marker));
+        } finally {
+            System.clearProperty(marker);
+        }
+    }
+
     @Test public void shouldParseJaxbObject() throws Exception {
         allIsWellFor(Input.fromJaxb(new ComplexNode()).build(), "complexNode");
     }

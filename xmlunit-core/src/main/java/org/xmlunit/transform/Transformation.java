@@ -27,6 +27,7 @@ import javax.xml.transform.dom.DOMResult;
 import javax.xml.transform.stream.StreamResult;
 import org.xmlunit.ConfigurationException;
 import org.xmlunit.XMLUnitException;
+import org.xmlunit.util.TransformerFactoryConfigurer;
 import org.w3c.dom.Document;
 
 /**
@@ -40,6 +41,11 @@ import org.w3c.dom.Document;
  * Transformer instance, the transform methods are thread-safe.</p>
  */
 public final class Transformation {
+    private static final TransformerFactoryConfigurer DEFAULT_FACTORY_CONFIGURER =
+        TransformerFactoryConfigurer.builder()
+        .withExtensionFunctionsDisabled()
+        .build();
+
     private Source source;
     private Source styleSheet;
     private TransformerFactory factory;
@@ -117,7 +123,8 @@ public final class Transformation {
      * Set the TraX factory to use.
      *
      * @param f the factory to use - may be null in which case the
-     * default factory will be used.
+     * default factory will be used with extension functions
+     * disabled.
      */
     public void setFactory(TransformerFactory f) {
         factory = f;
@@ -165,7 +172,7 @@ public final class Transformation {
         try {
             TransformerFactory fac = factory;
             if (fac == null) {
-                fac = TransformerFactory.newInstance();
+                fac = DEFAULT_FACTORY_CONFIGURER.configure(TransformerFactory.newInstance());
             }
             Transformer t;
             if (styleSheet != null) {
