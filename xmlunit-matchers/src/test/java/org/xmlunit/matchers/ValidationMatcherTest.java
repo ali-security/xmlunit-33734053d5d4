@@ -13,6 +13,7 @@
 */
 package org.xmlunit.matchers;
 
+import org.junit.Ignore;
 import org.junit.Test;
 import org.xmlunit.validation.Languages;
 
@@ -70,6 +71,7 @@ public class ValidationMatcherTest {
                    is(valid(new StreamSource(new File("../test-resources/Book.xsd")))));
     }
 
+    @Ignore("requires network: schemaLocation http://www.xmlunit.org/test-support/Book.xsd now answers 301 to https")
     @Test
     public void shouldSuccessfullyValidateInstanceWithoutExplicitSchemaSource() {
         assertThat(new StreamSource(new File("../test-resources/BookXsdGenerated.xml")),

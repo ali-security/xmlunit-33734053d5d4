@@ -1,21 +1,31 @@
 language: java
-jdk:
-  - openjdk6
-  - openjdk7
-  - oraclejdk8
-addons:
-  apt:
-    packages:
-      - openjdk-6-jdk
+# The Travis Ubuntu 24.04 image cannot provision the openjdk6/openjdk7/oraclejdk8
+# JDKs this config originally listed, so each leg downloads its JDK explicitly.
+# The JDK 6 leg is dropped: Java 6 cannot negotiate TLS 1.2 with Maven Central.
+env:
+  - JDK_URL="https://api.adoptium.net/v3/binary/latest/8/ga/linux/x64/jdk/hotspot/normal/eclipse"
+  - JDK_URL="https://cdn.azul.com/zulu/bin/zulu7.56.0.11-ca-jdk7.0.352-linux_x64.tar.gz" MAVEN_OPTS="-Dhttps.protocols=TLSv1.2"
 # use java 6 compatible maven version
 before_install:
+  - mkdir -p /tmp/jdk && wget -q -O /tmp/jdk.tar.gz "$JDK_URL" && tar -xzf /tmp/jdk.tar.gz -C /tmp/jdk --strip-components=1
+  - export JAVA_HOME=/tmp/jdk
+  - export PATH=$JAVA_HOME/bin:$PATH
   - wget https://archive.apache.org/dist/maven/maven-3/3.2.5/binaries/apache-maven-3.2.5-bin.zip
   - unzip -qq apache-maven-3.2.5-bin.zip
   - export M2_HOME=$PWD/apache-maven-3.2.5
   - export PATH=$M2_HOME/bin:$PATH
+  - java -version
+  - mvn -version
 install: true
+script:
+  - mvn test -B -fae
+after_script:
+  - |
+    echo "=== Skipped tests (from surefire XML reports) ==="
+    for f in */target/surefire-reports/TEST-*.xml; do
+      if grep -q "<skipped" "$f"; then echo "$f"; grep -B1 "<skipped" "$f"; fi
+    done
+    echo "=== end of skipped tests ==="
 notifications:
   email:
     - xmlunit-commits@lists.sourceforge.net
-after_success:
-  - mvn clean test jacoco:report coveralls:report -Pjacoco
